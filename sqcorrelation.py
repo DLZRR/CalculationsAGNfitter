@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from astropy.io import ascii
 
 
 fluxes = np.loadtxt('ALESS_TRUE_DATA.txt', skiprows=1)
@@ -22,17 +22,46 @@ data = np.loadtxt('ALESScontribution_new.txt', skiprows=1)
 
 name = ['tau', 'age', 'EBVgal', 'Tdust', 'fracPAH', 'Nh', 'EBVbbb', 'GA', 'SB', 'TO', 'BB', 'Mstar', 'SFR_opt', 'LIR(8-1000)', 'Lbb(0.1-1)', 'Lbbdered(0.1-1)', 'Lga(5-15)', 'Ltor(5-15)', 'Lsb(5-15)', 'SFR_IR']
 
-print (data[:, 34] - data[:, 34+1])/2.
-print (np.log10(data[:, 34]) - np.log10(data[:, 34+1]))/2.
-
-plt.errorbar(np.log10(data[:,34]), data[:,64], xerr = [(np.log10(data[:, 34]) - np.log10(data[:, 34+1]))/2., (np.log10(data[:, 34+2]) - np.log10(data[:, 34]))/2.], yerr = data[:,65], fmt='o')
-plt.xlabel('log M$_{*}$')
-plt.ylabel('AGN fraction')
-plt.savefig('Mvsfrac.pdf')
-plt.show()
+#print (data[:, 34] - data[:, 34+1])/2.
+#print (np.log10(data[:, 34]) - np.log10(data[:, 34+1]))/2.
 
 
 s = 0
+a = []
+b = []
+c = []
+delete = []
+
+#print len(data)
+
+for i in range(len(data)):
+    
+    k = data[i][0]
+    k = str(k)
+    
+    if float(k[-1]) > 1.0:
+        
+        delete.append(i)
+        
+        
+data = np.delete(data, delete, axis=0)
+
+ksf = 0
+
+for i in range(len(data)):
+    
+    #print data[i][64]
+    
+    if data[i][64] > 20.:
+        
+       ksf += 1
+       
+       
+#print len(data)
+print 'The fraction of sub-mm galaxies with an AGN is ', ksf/float(len(data)) * 100.
+
+#print data[:,0]
+
 
 for i in range(1, len(data[0])-5, 3):
     
@@ -45,17 +74,49 @@ for i in range(1, len(data[0])-5, 3):
             if correlation(data[:,i], data[:,j]) > 0.25:
                 
                 print correlation(data[:,i], data[:,j])
-                plt.errorbar(data[:,i], data[:,j], xerr = [(data[:, i] - data[:, i+1])/2., (data[:, i+2] - data[:, i])/2.], yerr = [(data[:, j] - data[:, j+1])/2., (data[:, j+2] - data[:, j])/2.], fmt='o')
-                plt.xlabel(name[s])
-                plt.ylabel(name[t])
-                plt.title('The squared correlation is ' + str(correlation(data[:,i], data[:,j])))
-                #plt.show()
+                plt.errorbar(np.log10(data[:,i]), np.log10(data[:,j]), xerr = [(np.log10(data[:, i]) - np.log10(data[:, i+1]))/2., (np.log10(data[:, i+2]) - np.log10(data[:, i]))/2.], yerr = [(np.log10(data[:, j]) - np.log10(data[:, j+1]))/2., (np.log10(data[:, j+2]) - np.log10(data[:, j]))/2.], fmt='o')
+                plt.xlabel('log ' + name[s])
+                plt.ylabel('log ' + name[t])
+                #plt.title('The squared correlation is ' + str(correlation(data[:,i], data[:,j])))
+                plt.show()
+                
+                a.append(name[s])
+                b.append(name[t])
+                c.append(correlation(data[:,i], data[:,j]))
               
         #print t
         t += 1
         
     s += 1
+    
+  
+print ascii.write([a, b, c], names=['x parameter', 'y parameter', 'squared correlation'], format='latex')
 
+
+redshift = fluxes[:,1]
+
+z_15 = []
+z_list_15 = []
+z_20 = []
+z_list_20 = []
+z_25 = []
+z_list_25 = []
+z_30 = []
+z_list_30 = []
+z_40 = []
+z_list_40 = []
+z_50 = []
+z_list_50 = []
+z_max = []
+z_list_max = []
+
+
+contr20 = []
+z_contr20 = []
+contr80 = []
+z_contr80 = []
+contr100 = []
+z_contr100 = []
 
 flux = []
 cont = []
@@ -78,20 +139,109 @@ for i in range(len(fluxes)):
             cont_err.append(data[j][65])
             temp_err1.append((data[j][10] - data[j][11])/2.)
             temp_err2.append((data[j][12] - data[j][10])/2.)
+            
+            if redshift[i] < 1.5:
+                
+                z_15.append(data[j][64])
+                z_list_15.append(redshift[i])
+                
+            elif redshift[i] < 2.0:
+                
+                z_20.append(data[j][64])
+                z_list_20.append(redshift[i])
+                
+            elif redshift[i] < 2.5:
+                
+                z_25.append(data[j][64])
+                z_list_25.append(redshift[i])
+                
+            elif redshift[i] < 3.0:
+                
+                z_30.append(data[j][64])
+                z_list_30.append(redshift[i])
+                
+            elif redshift[i] < 4.0:
+                
+                z_40.append(data[j][64])
+                z_list_40.append(redshift[i])
+                
+            elif redshift[i] < 5.0:
+                
+                z_50.append(data[j][64])
+                z_list_50.append(redshift[i])
+                
+            else:
+                
+                z_max.append(data[j][64])
+                z_list_max.append(redshift[i])
+                
+            if data[j][64] < 20:
+                
+                contr20.append(data[j][64])
+                z_contr20.append(redshift[i])
+                
+            elif data[j][64] < 80:
+                
+                contr80.append(data[j][64])
+                z_contr80.append(redshift[i])
+                
+            elif data[j][64] < 100:
+                
+                contr100.append(data[j][64])
+                z_contr100.append(redshift[i])
+            
+
+
+label1 = "$f_{AGN}$<20 (SFG)"
+label2 = "20<$f_{AGN}$<80 (Composite)"
+label3 = "$f_{AGN}$>80 (AGN)"
+
+
+plt.hist([z_contr20,z_contr80,z_contr100], bins=11, stacked=True, color=["red", "green", "blue"], normed = False)
+plt.legend({label1: "red", label2: "green", label3: "blue"})
+plt.xlabel('Redshift')
+plt.ylabel('Number of sources')
+plt.savefig('Distribution_redshifts_contribution.pdf')
+plt.show()
+
+label1 = "z<1.5"
+label2 = "1.5<z<2.0"
+label3 = "2.0<z<2.5"
+label4 = "2.5<z<3.0"
+label5 = "3.0<z<4.0"
+label6 = "4.0<z<5.0"
+label7 = "z>5.0"
+
+
+
+plt.hist([z_15,z_20,z_25, z_30, z_40, z_50, z_max], bins=11, stacked=True, color=["red", "green", "blue", "purple", "grey", "violet", "orange"], normed = False)
+plt.legend({label1: "red", label2: "green", "z<1.5": "blue", label4:"purple", label5:"grey", label6:"violet", label7:"orange"})
+plt.xlabel('AGN contribution')
+plt.ylabel('Number of sources')
+plt.savefig('Distribution_redshifts.pdf')
+plt.show()
+
 
 plt.errorbar(np.asarray(flux), np.asarray(cont), xerr=np.asarray(flux_err), yerr=np.asarray(cont_err), fmt='o')
 plt.xlabel('S$_{870}$ in Jansky')
 plt.ylabel('AGN fraction')
+#plt.title('The squared correlation is ' + str(correlation(data[:,10], data[:,64])))
 plt.savefig('S870frac.pdf')
-#plt.show()
+plt.show()
 
 plt.errorbar(np.asarray(flux), np.asarray(temp), xerr=np.asarray(flux_err), yerr=[np.asarray(temp_err1), np.asarray(temp_err2)], fmt='o')
 plt.xlabel('S$_{870}$ in Jansky')
 plt.ylabel('Temperature in Kelvin')
+#plt.title('The squared correlation is ' + str(correlation(flux, data[:,64])))
 plt.savefig('S870temp.pdf')
-#plt.show()
+plt.show()
 
-
+plt.errorbar(np.log10(data[:,34]), data[:,64], xerr = [(np.log10(data[:, 34]) - np.log10(data[:, 34+1]))/2., (np.log10(data[:, 34+2]) - np.log10(data[:, 34]))/2.], yerr = data[:,65], fmt='o')
+plt.xlabel('log M$_{*}$')
+plt.ylabel('AGN fraction')
+#plt.title('The squared correlation is ' + str(correlation(data[:,34], data[:,64])))
+plt.savefig('Mvsfrac.pdf')
+plt.show()
 
 ''' 
 
@@ -99,7 +249,7 @@ plt.savefig('S870temp.pdf')
 
 '''
 
-'''
+
 
 s = 0
 
@@ -112,12 +262,14 @@ for i in range(1, len(data[0])-5, 3):
         plt.errorbar(data[:,i], data[:,64], xerr = [(data[:, i] - data[:, i+1])/2., (data[:, i+2] - data[:, i])/2.], yerr = data[:,65], fmt='o')
         plt.xlabel(name[s])
         plt.ylabel('AGN fraction')
+        plt.title('The squared correlation is ' + str(correlation(data[:,i], data[:,64])))
+
         plt.show()
         
     s += 1
     
 
-'''
+
 
 '''
 
@@ -125,7 +277,7 @@ Histogram AGN contribution
 
 '''
 
-'''
+
 
 #plt.hist(data[:, 64], bins=11, weights=data[:, 65])
 
@@ -190,4 +342,4 @@ plt.show()
 
 print 'The mean log age is', np.log10(np.mean(data[:, 4])), np.std(np.log10(data[:, 4]))
 
-'''
+
